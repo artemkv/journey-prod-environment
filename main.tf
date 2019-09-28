@@ -1,17 +1,20 @@
 # Set up state storage - where to store state file
 terraform {
-  backend "gcs" {
+    backend "gcs" {
+    # you cannot use variables in this block, that's why the values are "hard-coded"
+    # what you can do is to provide these values when runninng "terraform init"
+    # so ideally you should not put this data here to keep the template re-usable
     credentials = "key.json"
-    bucket  = "journey-250514-tf-state"
-    prefix  = "journey"
+    bucket      = "journey-250514-tf-state"
+    prefix      = "journey"
   }
 }
 
 # Set up the cloud provider - where to create resources
 provider "google" {
   credentials = "${file("key.json")}"
-  project     = "journey-250514"
-  region      = "europe-west1"
+  project     = "${var.project_id}"
+  region      = "${var.gcp_region}"
 }
 
 # Topic to publish actions
@@ -68,18 +71,28 @@ resource "google_pubsub_subscription" "error-subscription" {
   }
 }
 
-output "action-topic-name" {
-  value = google_pubsub_topic.action-topic.id
+# Account for events service
+resource "google_service_account" "events-service-account" {
+  account_id   = "events-service-account"
+  display_name = "Events Service Account"
 }
 
-output "action-subscription-name" {
-  value = google_pubsub_subscription.action-subscription.id
+# Give event service a right to publish to action topic
+resource "google_pubsub_topic_iam_binding" "events-service-publish-to-action" {
+    project = "${var.project_id}"
+    topic = "${google_pubsub_topic.action-topic.name}"
+    role = "roles/pubsub.publisher"
+    members = [
+        "serviceAccount:${google_service_account.events-service-account.email}"
+    ]
 }
 
-output "error-topic-name" {
-  value = google_pubsub_topic.error-topic.id
-}
-
-output "error-subscription-name" {
-  value = google_pubsub_subscription.error-subscription.id
+# Give event service a right to publish to error topic
+resource "google_pubsub_topic_iam_binding" "events-service-publish-to-error" {
+    project = "${var.project_id}"
+    topic = "${google_pubsub_topic.error-topic.name}"
+    role = "roles/pubsub.publisher"
+    members = [
+        "serviceAccount:${google_service_account.events-service-account.email}"
+    ]
 }
