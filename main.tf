@@ -119,8 +119,8 @@ resource "google_container_node_pool" "gke_cluster_node_pool" {
   node_count = 1 # per zone
 
   node_config {
-    preemptible  = false
-    machine_type = "f1-micro"
+    preemptible  = true
+    machine_type = "${var.node_instance_type}"
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/logging.write",
