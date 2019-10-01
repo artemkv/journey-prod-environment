@@ -43,7 +43,7 @@ spec:
         args:
         - --api
         - --kubernetes
-        - --logLevel=INFO
+        - --logLevel=DEBUG
         - --defaultentrypoints=http,https
         - --entrypoints=Name:https Address::443 TLS
         - --entrypoints=Name:http Address::80
@@ -59,10 +59,10 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      name: web
+      name: http
     - protocol: TCP
       port: 443
-      name: secureweb
+      name: https
     - protocol: TCP
       port: 8080
       name: admin
