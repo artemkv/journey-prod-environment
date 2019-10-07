@@ -152,3 +152,13 @@ resource "google_container_node_pool" "gke_cluster_node_pool" {
     }
   }
 }
+
+# Allow event service to act as GCP service accounts
+resource "google_service_account_iam_binding" "events-service-bind-to-service-account" {
+  service_account_id = "${google_service_account.events-service-account.name}"
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "serviceAccount:${var.project_id}.svc.id.goog[${var.kubernetes_ns}/${var.events-service-k8s-account}]"
+  ]
+}
