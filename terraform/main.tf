@@ -17,8 +17,16 @@ provider "google" {
   region      = "${var.gcp_region}"
 }
 
+# Allow beta features
+provider "google-beta" {
+  credentials = "${file("key.json")}"
+  project     = "${var.project_id}"
+  region      = "${var.gcp_region}"
+}
+
 # Topic to publish actions
 resource "google_pubsub_topic" "action-topic" {
+  provider = "google"  
   name = "action-topic"
 
   labels = {
@@ -28,6 +36,7 @@ resource "google_pubsub_topic" "action-topic" {
 
 # Topic to publish errors
 resource "google_pubsub_topic" "error-topic" {
+  provider = "google"  
   name = "error-topic"
 
   labels = {
@@ -37,6 +46,7 @@ resource "google_pubsub_topic" "error-topic" {
 
 # Subscription to receive actions
 resource "google_pubsub_subscription" "action-subscription" {
+  provider = "google"  
   name  = "action-subscription"
   topic = "${google_pubsub_topic.action-topic.name}"
 
@@ -55,6 +65,7 @@ resource "google_pubsub_subscription" "action-subscription" {
 
 # Subscription to receive errors
 resource "google_pubsub_subscription" "error-subscription" {
+  provider = "google"  
   name  = "error-subscription"
   topic = "${google_pubsub_topic.error-topic.name}"
 
@@ -73,34 +84,38 @@ resource "google_pubsub_subscription" "error-subscription" {
 
 # Account for events service
 resource "google_service_account" "events-service-account" {
+  provider = "google"  
   account_id   = "events-service-account"
   display_name = "Events Service Account"
 }
 
 # Give event service a right to publish to action topic
 resource "google_pubsub_topic_iam_binding" "events-service-publish-to-action" {
-    project = "${var.project_id}"
-    topic = "${google_pubsub_topic.action-topic.name}"
-    role = "roles/pubsub.publisher"
-    members = [
-        "serviceAccount:${google_service_account.events-service-account.email}"
-    ]
+  provider = "google"  
+  project = "${var.project_id}"
+  topic = "${google_pubsub_topic.action-topic.name}"
+  role = "roles/pubsub.publisher"
+  members = [
+      "serviceAccount:${google_service_account.events-service-account.email}"
+  ]
 }
 
 # Give event service a right to publish to error topic
 resource "google_pubsub_topic_iam_binding" "events-service-publish-to-error" {
-    project = "${var.project_id}"
-    topic = "${google_pubsub_topic.error-topic.name}"
-    role = "roles/pubsub.publisher"
-    members = [
-        "serviceAccount:${google_service_account.events-service-account.email}"
-    ]
+  provider = "google"  
+  project = "${var.project_id}"
+  topic = "${google_pubsub_topic.error-topic.name}"
+  role = "roles/pubsub.publisher"
+  members = [
+      "serviceAccount:${google_service_account.events-service-account.email}"
+  ]
 }
 
 # TODO: split into a separate module
 
 # Create GKE cluster
 resource "google_container_cluster" "gke_cluster" {
+  provider = "google-beta"
   name     = "gke-cluster"
   location = "${var.gcp_region}"
 
@@ -109,10 +124,15 @@ resource "google_container_cluster" "gke_cluster" {
   # node pool and immediately delete it.
   remove_default_node_pool = true
   initial_node_count = 1
+
+  workload_identity_config {
+    identity_namespace = "${var.project_id}.svc.id.goog"
+  }
 }
 
 # Create GKE cluster node pool
 resource "google_container_node_pool" "gke_cluster_node_pool" {
+  provider = "google-beta"
   name       = "gke-cluster-node-pool"
   location   = "${var.gcp_region}"
   cluster    = "${google_container_cluster.gke_cluster.name}"
@@ -126,5 +146,9 @@ resource "google_container_node_pool" "gke_cluster_node_pool" {
       "https://www.googleapis.com/auth/logging.write",
       "https://www.googleapis.com/auth/monitoring",
     ]
+
+    workload_metadata_config {
+      node_metadata = "GKE_METADATA_SERVER" 
+    }
   }
 }
