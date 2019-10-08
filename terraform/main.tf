@@ -187,3 +187,13 @@ resource "google_service_account_iam_binding" "events-service-bind-to-service-ac
     "serviceAccount:${var.project_id}.svc.id.goog[${var.kubernetes_ns}/${var.events-service-k8s-account}]"
   ]
 }
+
+# Allow stats service to act as GCP service accounts
+resource "google_service_account_iam_binding" "stats-service-bind-to-service-account" {
+  service_account_id = "${google_service_account.stats-service-account.name}"
+  role               = "roles/iam.workloadIdentityUser"
+
+  members = [
+    "serviceAccount:${var.project_id}.svc.id.goog[${var.kubernetes_ns}/${var.stats-service-k8s-account}]"
+  ]
+}

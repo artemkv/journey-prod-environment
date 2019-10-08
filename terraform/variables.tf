@@ -22,3 +22,8 @@ variable "events-service-k8s-account" {
   description = "Kubernetes service account for events-service"
   default     = "events-service-account"
 }
+
+variable "stats-service-k8s-account" {
+  description = "Kubernetes service account for stats-service"
+  default     = "stats-service-account"
+}
