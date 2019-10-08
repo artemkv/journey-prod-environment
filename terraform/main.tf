@@ -111,6 +111,31 @@ resource "google_pubsub_topic_iam_binding" "events-service-publish-to-error" {
   ]
 }
 
+# Account for stats service
+resource "google_service_account" "stats-service-account" {
+  provider = "google"
+  account_id   = "stats-service-account"
+  display_name = "Stats Service Account"
+}
+
+# Give stats service a right to subscribe to action topic
+resource "google_pubsub_subscription_iam_binding" "stats-service-subscribe-to-action" {
+  subscription = "${google_pubsub_subscription.action-subscription.name}"
+  role         = "roles/pubsub.subscriber"
+  members      = [
+    "serviceAccount:${google_service_account.stats-service-account.email}"
+  ]
+}
+
+# Give stats service a right to subscribe to error topic
+resource "google_pubsub_subscription_iam_binding" "stats-service-subscribe-to-error" {
+  subscription = "${google_pubsub_subscription.error-subscription.name}"
+  role         = "roles/pubsub.subscriber"
+  members      = [
+    "serviceAccount:${google_service_account.stats-service-account.email}"
+  ]
+}
+
 # TODO: split into a separate module
 
 # Create GKE cluster
@@ -148,7 +173,7 @@ resource "google_container_node_pool" "gke_cluster_node_pool" {
     ]
 
     workload_metadata_config {
-      node_metadata = "GKE_METADATA_SERVER" 
+      node_metadata = "GKE_METADATA_SERVER"
     }
   }
 }
