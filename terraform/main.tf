@@ -136,6 +136,16 @@ resource "google_pubsub_subscription_iam_binding" "stats-service-subscribe-to-er
   ]
 }
 
+# Give stats service a right to write to datastore
+resource "google_project_iam_binding" "stats-service-update-stats" {
+  project = "${var.project_id}"
+  role    = "roles/datastore.user"
+
+  members = [
+    "serviceAccount:${google_service_account.stats-service-account.email}"
+  ]
+}
+
 # TODO: split into a separate module
 
 # Create GKE cluster
