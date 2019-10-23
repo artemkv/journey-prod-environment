@@ -28,3 +28,9 @@ Create cluster cert issuer
 ```
 kubectl apply -f cluster-issuer.yaml
 ```
+
+Verify cluster issuer (check "Ready" condition):
+
+```
+kubectl describe clusterissuer letsencrypt-prod
+```
